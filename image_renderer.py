@@ -20,6 +20,7 @@ class ImageRenderer(QScrollArea):
         self.setWidget(self.image_area)
 
         # Holds the cv2 image which is converted to QPixmap when displayed
+        # startup gradient image displayed
         self.base_image = np.zeros((1080, 1920, 3), np.uint8)
         self.base_image[:] = [[int(i/1920 * 255)] * 3 for i in range(0, 1920)]
 
@@ -31,6 +32,7 @@ class ImageRenderer(QScrollArea):
         self.image_area.resize(self.base_image.shape[1], self.base_image.shape[0])
 
         self.mouse_pos = QPoint(0, 0)
+        # need both scroll area and image label tracking for panning
         self.setMouseTracking(True)
         self.image_area.setMouseTracking(True)
 
@@ -56,11 +58,6 @@ class ImageRenderer(QScrollArea):
         self.horizontalScrollBar().setValue((self.horizontalScrollBar().value()+self.mouse_pos.x()) * factor - self.mouse_pos.x())
         self.verticalScrollBar().setValue((self.verticalScrollBar().value()+self.mouse_pos.y()) * factor - self.mouse_pos.y())
 
-    """
-    def mousePressEvent(self, mouse_event):
-        if mouse_event.button() == Qt.MidButton:
-            self.setCursor(Qt.OpenHandCursor)
-    """
 
     def mouseMoveEvent(self, mouse_event):
         if mouse_event.buttons() == Qt.MidButton:
@@ -72,7 +69,8 @@ class ImageRenderer(QScrollArea):
 
             self.horizontalScrollBar().setValue(int(x - delta.x()))
             self.verticalScrollBar().setValue(int(y - delta.y()))
-
+        else:
+            self.setCursor(Qt.ArrowCursor)
         
         self.mouse_pos = mouse_event.localPos()
 
