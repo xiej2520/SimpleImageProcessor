@@ -24,7 +24,7 @@ def threshold(img, threshold):
 def threshold_tozero(img, threshold):
 	return cv2.threshold(img, threshold, 255, cv2.THRESH_TOZERO)[1]
 
-def adaptive_threshold(img, threshold):
+def adaptive_threshold(img):
     return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2) # block size, constant
 
 def threshold_otsu_gaussian(img):

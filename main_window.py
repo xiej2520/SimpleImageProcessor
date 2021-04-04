@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog, QSlider
 from PyQt5.QtGui import QPixmap, QColor, QImage
 from PyQt5.QtCore import Qt
+
+from image_renderer import *
 import filters
 from opencv_processing import *
 
@@ -8,9 +10,10 @@ from opencv_processing import *
 app = QApplication([])
 win = QMainWindow()
 
-class Main(QMainWindow):
+class MainWindow(QMainWindow):
+
     def __init__(self, *args, **kwargs):
-        super(Main, self).__init__(*args, **kwargs)
+        super(MainWindow, self).__init__(*args, **kwargs)
         self.setWindowTitle("Simple Image Processor")
         
         self.central_widget = QWidget(self)    
@@ -24,12 +27,7 @@ class Main(QMainWindow):
 
         self.image_path_label = QLabel("File: ")
 
-        self.loadedImageBox = QLabel()
-        self.loadedImageBox.setMaximumWidth(1920)
-        self.loadedImageBox.setMaximumHeight(1080)
-        self.loadedImage = QPixmap(1920, 1080)
-        self.loadedImage.fill(QColor(200, 50, 230))
-        self.loadedImageBox.setPixmap(self.loadedImage)
+        self.image_box = ImageRenderer()
 
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(0)
@@ -40,16 +38,14 @@ class Main(QMainWindow):
 
         self.vbox.addWidget(self.file_select_button)
         self.vbox.addWidget(self.image_path_label)
-        self.vbox.addWidget(self.loadedImageBox)
+        self.vbox.addWidget(self.image_box)
         self.vbox.addWidget(self.slider)
 
 
     def select_file(self):
         self.image_path_label.setText("File: " + QFileDialog.getOpenFileName()[0])
-        self.loadedImage = convert_cv_qt(cv2.imread(self.image_path_label.text()[6:]))
-        self.loadedImageBox.setPixmap(self.loadedImage)
+        self.image_box.load_image(cv2.imread(self.image_path_label.text()[6:]))
 
     def slider_move(self):
         print(self.slider.value())
-        self.loadedImage = convert_cv_qt(filters.threshold(cv2.imread(self.image_path_label.text()[6:]), self.slider.value()))
-        self.loadedImageBox.setPixmap(self.loadedImage)
+        self.image_box.apply_filters(self.slider.value())

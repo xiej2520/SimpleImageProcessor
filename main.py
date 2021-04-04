@@ -5,7 +5,7 @@ from filters import *
 
 app = QApplication(sys.argv)
 
-window = Main()
+window = MainWindow()
 window.show()
 
 app.exec_()
