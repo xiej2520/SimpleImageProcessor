@@ -1,10 +1,12 @@
 from PyQt5.QtWidgets import QLabel, QSizePolicy, QScrollArea
 from PyQt5.QtGui import QPixmap, QColor, QImage
 from PyQt5.QtCore import Qt, QPoint
-import cv2
-from filters import *
-from opencv_processing import *
+import numpy as np
 import random
+
+import cv2
+import filters
+from opencv_processing import convert_cv_qt
 
 
 class ImageRenderer(QScrollArea):
@@ -46,7 +48,7 @@ class ImageRenderer(QScrollArea):
     
 
     def apply_filters(self, t):
-        self.filtered_image = threshold(self.base_image, t)
+        self.filtered_image = filters.threshold(self.base_image, t)
         self.image_area.setPixmap(convert_cv_qt(self.filtered_image))
 
 
