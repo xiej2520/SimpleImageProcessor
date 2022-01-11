@@ -1,9 +1,12 @@
 from PyQt5.QtWidgets import QApplication
 
+from main_controller import MainController
+
 def run():
     app = QApplication(sys.argv)
 
-    window = MainWindow()
+    controller = MainController()
+    window = MainWindow(controller)
     window.show()
 
     app.exec_()

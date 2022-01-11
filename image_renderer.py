@@ -11,27 +11,21 @@ from opencv_processing import convert_cv_qt
 
 class ImageRenderer(QScrollArea):
 
-    def __init__(self):
+    def __init__(self, main_controller):
         super(QScrollArea, self).__init__()
+        self.main_controller = main_controller
+        main_controller.image_renderer = self
 
         self.image_area = QLabel()
         self.image_area.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored);
         self.image_area.setScaledContents(True)
 
-
         self.setWidget(self.image_area)
 
-        # Holds the cv2 image which is converted to QPixmap when displayed
-        # startup gradient image displayed
-        self.base_image = np.zeros((1080, 1920, 3), np.uint8)
-        self.base_image[:] = [[int(i/1920 * 255)] * 3 for i in range(0, 1920)]
-
-        # starts pointing to base
-        self.filtered_image = self.base_image
-        self.image_area.setPixmap(convert_cv_qt(self.filtered_image))
+        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
 
         self.scale_factor = 1
-        self.image_area.resize(self.base_image.shape[1], self.base_image.shape[0])
+        self.image_area.resize(self.main_controller.base_image.shape[1], self.main_controller.base_image.shape[0])
 
         self.mouse_pos = QPoint(0, 0)
         # need both scroll area and image label tracking for panning
@@ -40,22 +34,23 @@ class ImageRenderer(QScrollArea):
 
 
     def load_image(self, img):
-        self.base_image = img
-        self.filtered_image = self.base_image
+        self.main_controller.base_image = img
+        self.main_controller.filtered_image = self.main_controller.base_image
         self.scale_factor = 1
-        self.image_area.resize(self.filtered_image.shape[1], self.filtered_image.shape[0])
-        self.image_area.setPixmap(convert_cv_qt(self.filtered_image))
-    
+        self.image_area.resize(self.main_controller.filtered_image.shape[1], self.main_controller.filtered_image.shape[0])
+        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
 
-    def apply_filters(self, t):
-        self.filtered_image = filters.threshold(self.base_image, t)
-        self.image_area.setPixmap(convert_cv_qt(self.filtered_image))
 
+    def apply_filters(self, filters_list):
+        self.main_controller.filtered_image = self.main_controller.base_image
+        for filter in filters_list:
+            self.main_controller.filtered_image = filter.apply(self.main_controller.filtered_image)
+        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
 
     def scale_image(self, factor):
         # scales image by scaling the image label
         self.scale_factor *= factor
-        self.image_area.resize(self.scale_factor * self.filtered_image.shape[1], self.scale_factor * self.filtered_image.shape[0])
+        self.image_area.resize(self.scale_factor * self.main_controller.filtered_image.shape[1], self.scale_factor * self.main_controller.filtered_image.shape[0])
         # shifts scrollbars to keep image pixel under the mouse fixed
         self.horizontalScrollBar().setValue((self.horizontalScrollBar().value()+self.mouse_pos.x()) * factor - self.mouse_pos.x())
         self.verticalScrollBar().setValue((self.verticalScrollBar().value()+self.mouse_pos.y()) * factor - self.mouse_pos.y())
@@ -84,10 +79,10 @@ class ImageRenderer(QScrollArea):
 
         if wheel_event.modifiers() == Qt.ControlModifier:
             # FLOATING POINT ERRORS
-            if wheel_event.angleDelta().y() > 0 and self.scale_factor < zoom_factor ** 3:
+            if wheel_event.angleDelta().y() > 0 and self.scale_factor < zoom_factor ** 4:
                 self.scale_image(zoom_factor)
 
-            elif wheel_event.angleDelta().y() < 0 and self.scale_factor > (1/zoom_factor ** 3):
+            elif wheel_event.angleDelta().y() < 0 and self.scale_factor > (1/zoom_factor ** 4):
                 self.scale_image(1/zoom_factor)
             print(self.scale_factor)
 
