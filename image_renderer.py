@@ -22,6 +22,11 @@ class ImageRenderer(QScrollArea):
 
         self.setWidget(self.image_area)
 
+        # startup gradient image displayed
+        self.main_controller.base_image = np.zeros((1080, 1920, 3), np.uint8)
+        self.main_controller.base_image[:] = [[int(i/1920 * 255)] * 3 for i in range(0, 1920)]
+        self.main_controller.filtered_image = self.main_controller.base_image
+
         self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
 
         self.scale_factor = 1

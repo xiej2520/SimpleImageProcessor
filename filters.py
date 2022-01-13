@@ -3,7 +3,14 @@ import numpy as np
 
 class Filters():
     @staticmethod
-    def gamma_correct(img, gamma):
+    def gamma_correct(img, gamma_in):
+        # gamma_in is 0-255
+        # transform 0-127 to 0-1, 128-255 to 1-128
+        if gamma_in < 128:
+            gamma = 1 / (128-gamma_in)
+        else:
+            gamma = gamma_in-127
+
         outImg = np.zeros(img.shape, img.dtype)
 
         # lookup table

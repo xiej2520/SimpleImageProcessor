@@ -29,8 +29,9 @@ class FileMenu(QMenu):
         try:
             filters = "Image files (*.bmp *.dib *.jpeg *.jpg *.jpe *.jp2 *.png *.pgm *.ppm *.sr *.ras *tiff *.tif)"
             file_path = QFileDialog.getOpenFileName(self, "Open Image", '', filters)[0]
-            self.main_controller.file_path = file_path
-            self.main_controller.reload_file()
+            if file_path != "":
+                self.main_controller.file_path = file_path
+                self.main_controller.reload_file()
         except:
             error_message = QMessageBox()
             error_message.setWindowTitle("Error")

@@ -16,10 +16,7 @@ class MainController():
         # data
         self.file_path = ""
         # Holds the cv2 image which is converted to QPixmap when displayed
-        # startup gradient image displayed
-        self.base_image = np.zeros((1080, 1920, 3), np.uint8)
-        self.base_image[:] = [[int(i/1920 * 255)] * 3 for i in range(0, 1920)]
-
+        self.base_image = None
         # starts pointing to base
         self.filtered_image = self.base_image
 
@@ -44,11 +41,12 @@ class MainController():
 
     def add_filter(self, filter_name):
         if filter_name == "GAMMA_CORRECT" or "THRESHOLD" or "THRESHOLD_TOZERO":
-            args = [0]
+            args = [self.filter_editor.spinbox.value()]
         else:
             args = []
         self.current_filters.append(Filter_Wrapper(filter_name, args))
         self.filter_editor.filters_list.addItem(filter_name)
+        self.filter_editor.filters_list.setCurrentRow(len(self.current_filters)-1)
         self.image_renderer.apply_filters(self.current_filters)
 
 
@@ -60,6 +58,28 @@ class MainController():
             index -= 1
             if index >= 0 and len(self.current_filters[index].args) > 0:
                 self.filter_editor.slider.setValue(self.current_filters[index].args[0])
+            self.image_renderer.apply_filters(self.current_filters)
+
+
+    def move_filter_up(self):
+        index = self.filter_editor.filters_list.currentRow()
+        print("UP")
+        print(index)
+        if index > 0:
+            self.current_filters[index-1], self.current_filters[index] = self.current_filters[index], self.current_filters[index-1]
+            self.filter_editor.filters_list.insertItem(index-1, self.filter_editor.filters_list.takeItem(index))
+            self.filter_editor.filters_list.setCurrentRow(index-1)
+            self.image_renderer.apply_filters(self.current_filters)
+
+
+    def move_filter_down(self):
+        index = self.filter_editor.filters_list.currentRow()
+        print("DOWN")
+        print(index)
+        if index < len(self.current_filters)-1:
+            self.current_filters[index], self.current_filters[index+1] = self.current_filters[index+1], self.current_filters[index]
+            self.filter_editor.filters_list.insertItem(index+1, self.filter_editor.filters_list.takeItem(index))
+            self.filter_editor.filters_list.setCurrentRow(index+1)
             self.image_renderer.apply_filters(self.current_filters)
 
 
