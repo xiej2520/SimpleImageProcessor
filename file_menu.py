@@ -1,8 +1,6 @@
 from PyQt5.QtWidgets import QMenu, QAction, QFileDialog, QMessageBox
 from quit_dialog import QuitDialog
 
-import cv2
-
 
 class FileMenu(QMenu):
     
@@ -31,7 +29,7 @@ class FileMenu(QMenu):
             file_path = QFileDialog.getOpenFileName(self, "Open Image", '', filters)[0]
             if file_path != "":
                 self.main_controller.file_path = file_path
-                self.main_controller.reload_file()
+                self.main_controller.load_file()
         except:
             error_message = QMessageBox()
             error_message.setWindowTitle("Error")
@@ -49,10 +47,8 @@ class FileMenu(QMenu):
             save_window.setAcceptMode(QFileDialog.AcceptSave)
     
             save_window.exec()
-            # No file selected
-            if len(save_window.selectedFiles()) == 0:
-                return 0
-            self.main_controller.write_file(save_window.selectedFiles()[0])
+            if len(save_window.selectedFiles()) != 0:
+                self.main_controller.write_file(save_window.selectedFiles()[0])
 
         except:
             error_message = QMessageBox()

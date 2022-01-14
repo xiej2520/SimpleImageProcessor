@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QLabel, QSizePolicy, QScrollArea
-from PyQt5.QtGui import QPixmap, QColor, QImage
+from PyQt5.QtWidgets import QApplication, QLabel, QSizePolicy, QScrollArea, QAction, QMenu
+from PyQt5.QtGui import QPixmap, QColor, QImage, QCursor
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
 import random
@@ -36,6 +36,14 @@ class ImageRenderer(QScrollArea):
         # need both scroll area and image label tracking for panning
         self.setMouseTracking(True)
         self.image_area.setMouseTracking(True)
+
+
+    def contextMenuEvent(self, event):
+        context_menu = QMenu(self)
+        copy_action = QAction("&Copy", self)
+        copy_action.triggered.connect(self.copy_to_clipboard)
+        context_menu.addAction(copy_action)
+        context_menu.popup(QCursor.pos())
 
 
     def load_image(self, img):
@@ -93,3 +101,7 @@ class ImageRenderer(QScrollArea):
 
         else:
             return super().wheelEvent(wheel_event)
+
+
+    def copy_to_clipboard(self):
+        QApplication.clipboard().setPixmap(convert_cv_qt(self.main_controller.filtered_image))

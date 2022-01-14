@@ -23,7 +23,7 @@ class MainController():
         self.current_filters = []
 
 
-    def reload_file(self):
+    def load_file(self):
         self.image_renderer.load_image(cv2.imread(self.file_path))
         self.image_path_label.setText("File: " + self.file_path)
         self.image_renderer.apply_filters(self.current_filters)
