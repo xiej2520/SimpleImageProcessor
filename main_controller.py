@@ -40,7 +40,7 @@ class MainController():
 
 
     def add_filter(self, filter_name):
-        if filter_name == "GAMMA_CORRECT" or "THRESHOLD" or "THRESHOLD_TOZERO":
+        if filter_name == "SPLIT_CHANNEL" or "GAMMA_CORRECT" or "THRESHOLD" or "THRESHOLD_TOZERO" or "BOX_BLUR" or "MEDIAN_BLUR" or "GAUSSIAN_BLUR" or "EROSION" or "DILATION" or "OPENING" or "CLOSING" or "GRADIENT" or "ROTATE" or "AFFINE" or "PERSPECTIVE" or "CONVOLVE":
             args = [self.filter_editor.spinbox.value()]
         else:
             args = []
@@ -86,7 +86,8 @@ class MainController():
     def update_argument_value(self):
         if self.filter_editor.filters_list.count() > 0:
             index = self.filter_editor.filters_list.currentRow()
-            if len(self.current_filters[index].args) == 0:
-                self.current_filters[index].args.append(0)
-            self.current_filters[index].args[0] = self.filter_editor.spinbox.value()
-            self.image_renderer.apply_filters(self.current_filters)
+            if (index >= 0):
+                if len(self.current_filters[index].args) == 0:
+                    self.current_filters[index].args.append(0)
+                self.current_filters[index].args[0] = self.filter_editor.spinbox.value()
+                self.image_renderer.apply_filters(self.current_filters)

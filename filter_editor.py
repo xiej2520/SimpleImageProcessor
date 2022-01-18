@@ -14,9 +14,13 @@ class FilterEditor(QWidget):
         self.setLayout(layout)
         
         self.filters_list = QListWidget()
-        filters_select = QComboBox()
-        filters_select.addItems(["THRESHOLD", "THRESHOLD_TO_ZERO", "THRESHOLD_ADAPTIVE", "THRESHOLD_OTSU_GAUSS", "GAMMA_CORRECT"])
         self.filters_list.itemClicked.connect(self.filter_item_clicked)
+        self.prev_index = -1
+
+        filters_select = QComboBox()
+        filters_select.addItems(["INVERT", "SPLIT_CHANNEL", "THRESHOLD", "THRESHOLD_TO_ZERO", "THRESHOLD_ADAPTIVE", "THRESHOLD_OTSU_GAUSS", "GAMMA_CORRECT", 
+        "BOX_BLUR", "MEDIAN_BLUR", "GAUSSIAN_BLUR", "EROSION", "DILATION", "OPENING", "CLOSING", "GRADIENT", "ROTATE", "AFFINE", "PERSPECTIVE", "SHARPEN", "EDGE_DETECT", "EMBOSS", "SOBEL", "CONVOLVE"])
+        filters_select.setMaxVisibleItems(20)
 
         self.spinbox = QSpinBox()
         self.spinbox.setMinimum(0)
@@ -53,6 +57,12 @@ class FilterEditor(QWidget):
 
     def filter_item_clicked(self, item):
         index = self.filters_list.currentRow()
+        if index == self.prev_index:
+            self.filters_list.clearSelection()
+            self.filters_list.setCurrentRow(-1)
+            self.prev_index = -1
+        else:
+            self.prev_index = index
         if len(self.main_controller.current_filters[index].args) > 0:
             self.slider.setValue(self.main_controller.current_filters[index].args[0])
 
@@ -64,4 +74,4 @@ class FilterEditor(QWidget):
     def spinbox_change(self):
         self.slider.setValue(self.spinbox.value())
         self.main_controller.update_argument_value()
-        print(self.spinbox.value())
+        #print(self.spinbox.value())
