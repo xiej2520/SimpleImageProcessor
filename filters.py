@@ -334,10 +334,11 @@ class FilterDilate(FilterErode):
 class FilterMorphologyEx(FilterErode):
 
     name = "Morphological Transformation"
-    super().args["operation"] = "RadioSelect"
+    args = FilterErode.args.copy()
+    args["operation"] = "RadioSelect"
 
     def __init__(self):
-        super().init__()
+        super().__init__()
         self.operation = RadioSelect(MorphTypes)
 
     def apply(self, img):
