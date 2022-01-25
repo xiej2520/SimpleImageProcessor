@@ -46,7 +46,7 @@ class FilterSplitChannel(Filter):
             zero = np.zeros_like(img[:,:,0])
             if (self.channel.value == "Red"):
                 return np.dstack((zero, zero, img[:,:,2]))
-            elif (self.channel.value == "Blue"):
+            elif (self.channel.value == "Green"):
                 return np.dstack((zero, img[:,:,1], zero))
             else:
                 return np.dstack((img[:,:,0], zero, zero))

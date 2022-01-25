@@ -54,9 +54,10 @@ class MainController():
             self.current_filters.pop(index)
             self.filter_editor.filters_list.takeItem(index)
             index -= 1
-            if index >= 0 and len(self.current_filters[index].args) > 0:
-                self.filter_editor.slider.setValue(self.current_filters[index].args[0])
-            self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
+            if index >= 0:
+                self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
+            else:
+                self.filter_editor.config_panel.remove_all_configs
             self.image_renderer.apply_filters(self.current_filters)
 
 
