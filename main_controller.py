@@ -58,7 +58,7 @@ class MainController():
                 print(index)
                 self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
             else:
-                self.filter_editor.config_panel.remove_all_configs
+                self.filter_editor.config_panel.remove_all_configs()
             self.image_renderer.apply_filters(self.current_filters)
 
 

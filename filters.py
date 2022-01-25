@@ -102,7 +102,7 @@ class FilterThresholdToZero(Filter):
 
     def apply(self, img):
         if self.active:
-            return cv2.threshold(img, self.threshold.value, cv2.THRESH_TOZERO)[1]
+            return cv2.threshold(img, self.threshold.value, 255, cv2.THRESH_TOZERO)[1]
         else:
             return img
 
@@ -124,19 +124,20 @@ class FilterThresholdAdaptive(Filter):
         self.adaptive_method = RadioSelect(["ADAPTIVE_THRESH_MEAN_C", "ADAPTIVE_THRESH_GAUSSIAN_C"])
         self.threshold_type = RadioSelect(["THRESH_BINARY", "THRESH_BINARY_INV"])
         self.block_size = BoundedInteger(3, 3, 255)
-        self.constant = BoundedInteger(0, -255, 255)
+        self.constant = BoundedInteger(0, -64, 64)
 
     def apply(self, img):
         if self.active:
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            #am = cv2.ADAPTIVE_THRESH_MEAN_C if self.adaptive_method == "ADAPTIVE_THRES_MEAN_C" else cv2.ADAPTIVE_THRESH_GAUSSIAN_C
-            #tt = cv2.THRESH_BINARY if self.threshold_type == "THRESH_BINARY" else cv2.THRESH_BINARY_INV
+            parsed_block = self.block_size.value
+            if parsed_block != 0 and parsed_block % 2 == 0:
+                parsed_block += 1
             filtered_img = cv2.adaptiveThreshold(
                 img_gray, 
                 self.max_value.value, 
                 getattr(cv2, self.adaptive_method.value), 
                 getattr(cv2, self.threshold_type.value), 
-                self.block_size.value, 
+                parsed_block, 
                 self.constant.value
             )
             return cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
@@ -186,19 +187,17 @@ class FilterBoxBlur(Filter):
 class FilterMedianBlur(Filter):
 
     name = "Median Blur"
-    params = {"active": "Boolean", "kernel_width": "BoundedInteger", "kernel_height": "BoundedInteger"}
+    params = {"active": "Boolean", "ksize": "BoundedInteger"}
 
     def __init__(self):
         super().__init__()
-        self.kernel_width = BoundedInteger(3, 1, 255)
-        self.kernel_height = BoundedInteger(3, 1, 255)
+        self.ksize = BoundedInteger(3, 1, 255)
 
     def apply(self, img):
         if self.active:
-            return cv2.medianBlur(img, (
-                self.kernel_width.value + (1 if self.kernel_width.value & 2 == 0 else 0), 
-                self.kernel_height.value+ (1 if self.kernel_height.value & 2 == 0 else 0)
-            ))
+            return cv2.medianBlur(img, 
+                (self.ksize.value + (1 if self.ksize.value % 2 == 0 else 0)), 
+            )
         else:
             return img
 
@@ -219,10 +218,11 @@ class FilterGaussianBlur(Filter):
         super().__init__()
         self.kernel_width = BoundedInteger(3, 0, 255)
         self.kernel_height = BoundedInteger(3, 0, 255)
-        self.sigma_x = BoundedDouble(0, 0, 5)
-        self.sigma_y = BoundedDouble(0, 0, 5)
+        self.sigma_x = BoundedDouble(0, 0, 63)
+        self.sigma_y = BoundedDouble(0, 0, 63)
         valid_border_types = BorderTypes.copy()
         valid_border_types.remove("BORDER_WRAP")
+        valid_border_types.remove("BORDER_TRANSPARENT")
         self.border_type = RadioSelect(valid_border_types, "BORDER_DEFAULT")
 
     def apply(self, img):
@@ -233,7 +233,7 @@ class FilterGaussianBlur(Filter):
                 parsed_kw += 1
             if self.kernel_height.value != 0 and self.kernel_height.value % 2 == 0:
                 parsed_kh += 1
-            return cv2.GaussianBlur(img, (parsed_kw, parsed_kh), self.sigma_x.value, self.sigma_y.value, self.border_type.value)
+            return cv2.GaussianBlur(img, (parsed_kw, parsed_kh), self.sigma_x.value, self.sigma_y.value, getattr(cv2, self.border_type.value))
         else:
             return img
 
@@ -268,7 +268,7 @@ class FilterErode(Filter):
             )
             return cv2.erode(img, kernel, 
                 iterations=self.iterations.value, 
-                borderType=getattr(cv2.self.border_type.value)
+                borderType=getattr(cv2, self.border_type.value)
             )
         else:
             return img
@@ -289,7 +289,7 @@ class FilterDilate(FilterErode):
             )
             return cv2.dilate(img, kernel, 
                 iterations=self.iterations.value, 
-                borderType=getattr(cv2.self.border_type.value)
+                borderType=getattr(cv2, self.border_type.value)
             )
         else:
             return img
@@ -316,7 +316,7 @@ class FilterMorphologyEx(FilterErode):
                 getattr(cv2, self.operation.value), 
                 kernel, 
                 iterations=self.iterations.value, 
-                borderType=getattr(cv2.self.border_type.value)
+                borderType=getattr(cv2, self.border_type.value)
             )
         else:
             return img
@@ -357,26 +357,25 @@ class WarpAffine(Filter):
 
     def __init__(self):
         super().__init__()
-        self.M11 = BoundedDouble(0, -1024, 1024)
-        self.M12 = BoundedDouble(0, -1024, 1024)
-        self.M13 = BoundedDouble(0, -1024, 1024)
-        self.M21 = BoundedDouble(0, -1024, 1024)
-        self.M22 = BoundedDouble(0, -1024, 1024)
-        self.M23 = BoundedDouble(0, -1024, 1024)
+        self.M11 = BoundedDouble(1, -10, 10)
+        self.M12 = BoundedDouble(0, -10, 10)
+        self.M13 = BoundedDouble(0, -10, 10)
+        self.M21 = BoundedDouble(0, -10, 10)
+        self.M22 = BoundedDouble(1, -10, 10)
+        self.M23 = BoundedDouble(0, -10, 10)
         self.flags = RadioSelect(InterpolationFlags, "INTER_LINEAR")
         self.border_mode = RadioSelect(BorderTypes, "BORDER_CONSTANT")
 
     def apply(self, img):
         if self.active:
             rows, cols, channels = img.shape
-            mat = [[self.M11.value, self.M12.value, self.M13.value], [self.M21.value, self.M22.value, self.M23.value]]
+            mat = np.float32([[self.M11.value, self.M12.value, self.M13.value], [self.M21.value, self.M22.value, self.M23.value]])
             return cv2.warpAffine(img, mat, (cols, rows), 
                 getattr(cv2, self.flags.value), 
                 getattr(cv2, self.border_mode.value)
             )
         else:
             return img
-
 
 class WarpPerspective(Filter):
 
@@ -398,15 +397,15 @@ class WarpPerspective(Filter):
 
     def __init__(self):
         super().__init__()
-        self.M11 = BoundedDouble(0, -1024, 1024)
-        self.M12 = BoundedDouble(0, -1024, 1024)
-        self.M13 = BoundedDouble(0, -1024, 1024)
-        self.M21 = BoundedDouble(0, -1024, 1024)
-        self.M22 = BoundedDouble(0, -1024, 1024)
-        self.M23 = BoundedDouble(0, -1024, 1024)
-        self.M31 = BoundedDouble(0, -1024, 1024)
-        self.M32 = BoundedDouble(0, -1024, 1024)
-        self.M33 = BoundedDouble(0, -1024, 1024)
+        self.M11 = BoundedDouble(1, -10, 10)
+        self.M12 = BoundedDouble(0, -10, 10)
+        self.M13 = BoundedDouble(0, -10, 10)
+        self.M21 = BoundedDouble(0, -10, 10)
+        self.M22 = BoundedDouble(1, -10, 10)
+        self.M23 = BoundedDouble(0, -10, 10)
+        self.M31 = BoundedDouble(0, -10, 10)
+        self.M32 = BoundedDouble(0, -10, 10)
+        self.M33 = BoundedDouble(1, -10, 10)
         self.flags = RadioSelect(InterpolationFlags, "INTER_LINEAR")
         self.border_mode = RadioSelect(BorderTypes, "BORDER_CONSTANT")
         self.border_value = BoundedInteger(0, 0, 255)
@@ -414,18 +413,17 @@ class WarpPerspective(Filter):
     def apply(self, img):
         if self.active:
             rows, cols, channels = img.shape
-            mat = [
+            mat = np.float32([
                 [self.M11.value, self.M12.value, self.M13.value], 
                 [self.M21.value, self.M22.value, self.M23.value], 
                 [self.M31.value, self.M32.value, self.M33.value]
-            ]
-            return cv2.warpAffine(img, mat, (cols, rows), 
+            ])
+            return cv2.warpPerspective(img, mat, (cols, rows), 
                 getattr(cv2, self.flags.value), 
                 getattr(cv2, self.border_mode.value)
             )
         else:
             return img
-
 
 class WarpPolar(Filter):
 
@@ -434,8 +432,11 @@ class WarpPolar(Filter):
 
     def __init__(self):
         super().__init__()
-        self.max_radius = BoundedInteger(1, 0, 255)
-        self.flags = RadioSelect(InterpolationFlags)
+        self.max_radius = BoundedInteger(1, 0, 4096)
+        valid_flags = InterpolationFlags.copy()
+        valid_flags.remove("INTER_NEAREST_EXACT")
+        valid_flags.remove("INTER_MAX")
+        self.flags = RadioSelect(valid_flags)
         self.POLAR_LOG = False
         self.INVERSE_MAP = False
 
@@ -447,7 +448,7 @@ class WarpPolar(Filter):
             if self.INVERSE_MAP:
                 flag += cv2.WARP_INVERSE_MAP
             rows, cols, channels = img.shape
-            return cv2.warpPolar(img, (cols, rows), ((cols-1)/2.0, (rows-1)/2.0), self.max_radius.value, flag)
+            return cv2.warpPolar(img, (cols, rows), ((cols-1)/2.0, (rows-1)/2.0), self.max_radius.value, getattr(cv2, flag))
         else:
             return img
 
@@ -491,7 +492,7 @@ class FilterConvolvePresets(Filter):
                 [-1, 0, 1]
                 ])
 
-            return cv2.fitler2D(img, -1, kernel, borderType=self.border_type.value)
+            return cv2.filter2D(img, -1, kernel, borderType=getattr(cv2, self.border_type.value))
         else:
             return img
 
@@ -532,12 +533,13 @@ class FilterConvolve(Filter):
         self.delta = BoundedInteger(0, -255, 255)
         valid_border_types = BorderTypes.copy()
         valid_border_types.remove("BORDER_WRAP")
+        valid_border_types.remove("BORDER_TRANSPARENT")
         self.border_type = RadioSelect(valid_border_types, "BORDER_DEFAULT")
 
     def apply(self, img):
         if self.active:
-            kernel = [[self.M11.value, self.M12.value, self.M13.value], [self.M21.value, self.M22.value, self.M23.value], [self.M31.value, self.M32.value, self.M33.value]]
-            return cv2.fitler2D(img, -1, kernel, (self.anchor_x.value, self.anchor_y.value), self.delta.value, self.border_type.value)
+            kernel = np.float32([[self.M11.value, self.M12.value, self.M13.value], [self.M21.value, self.M22.value, self.M23.value], [self.M31.value, self.M32.value, self.M33.value]])
+            return cv2.filter2D(img, -1, kernel, anchor=(self.anchor_x.value, self.anchor_y.value), delta=self.delta.value, borderType=getattr(cv2, self.border_type.value))
         else:
             return img
 
