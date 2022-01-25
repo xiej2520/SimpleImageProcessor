@@ -2,10 +2,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QSizePolicy, QScrollArea, QAct
 from PyQt5.QtGui import QPixmap, QColor, QImage, QCursor
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
-import random
 
-import cv2
-import filters
 from opencv_processing import convert_cv_qt
 
 
@@ -18,7 +15,7 @@ class ImageRenderer(QScrollArea):
 
         self.image_area = QLabel()
         self.image_area.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored);
-        self.image_area.setScaledContents(True)
+        self.image_area.setScaledContents(False)
 
         self.setWidget(self.image_area)
 
@@ -53,18 +50,20 @@ class ImageRenderer(QScrollArea):
         self.image_area.resize(self.main_controller.filtered_image.shape[1], self.main_controller.filtered_image.shape[0])
         self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
 
-
     def apply_filters(self, filters_list):
         self.main_controller.filtered_image = self.main_controller.base_image
         for filter in filters_list:
             self.main_controller.filtered_image = filter.apply(self.main_controller.filtered_image)
-        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image))
+        rows, cols, channels = self.main_controller.filtered_image.shape
+        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image).scaled(cols*self.scale_factor, rows*self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation))
 
     def scale_image(self, factor):
-        # scales image by scaling the image label
+        # scales image, then resizes image label to get correct scrollbars
+        # uses a ton of memory to hold scaled image, rework later
         self.scale_factor *= factor
-        self.image_area.resize(self.scale_factor * self.main_controller.filtered_image.shape[1], self.scale_factor * self.main_controller.filtered_image.shape[0])
-        # shifts scrollbars to keep image pixel under the mouse fixed
+        rows, cols, channels = self.main_controller.filtered_image.shape
+        self.image_area.setPixmap(convert_cv_qt(self.main_controller.filtered_image).scaled(cols*self.scale_factor, rows*self.scale_factor, Qt.IgnoreAspectRatio, Qt.FastTransformation))
+        self.image_area.resize(cols*self.scale_factor, rows*self.scale_factor)
         self.horizontalScrollBar().setValue((self.horizontalScrollBar().value()+self.mouse_pos.x()) * factor - self.mouse_pos.x())
         self.verticalScrollBar().setValue((self.verticalScrollBar().value()+self.mouse_pos.y()) * factor - self.mouse_pos.y())
 
@@ -97,7 +96,6 @@ class ImageRenderer(QScrollArea):
 
             elif wheel_event.angleDelta().y() < 0 and self.scale_factor > (1/zoom_factor ** 4):
                 self.scale_image(1/zoom_factor)
-            print(self.scale_factor)
 
         else:
             return super().wheelEvent(wheel_event)

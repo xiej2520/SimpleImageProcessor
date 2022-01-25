@@ -1,5 +1,6 @@
+import sys
 from PyQt5.QtWidgets import QApplication
-
+from main_window import MainWindow
 from main_controller import MainController
 
 def run():
@@ -14,6 +15,4 @@ def run():
 
 if __name__ == '__main__':
 
-    import sys
-    from main_window import MainWindow
     sys.exit(run())
