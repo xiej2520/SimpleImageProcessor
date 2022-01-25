@@ -1,7 +1,7 @@
 
 import numpy as np
 import cv2
-from filter_wrapper import Filter_Wrapper
+import filters
 
 
 class MainController():
@@ -39,14 +39,12 @@ class MainController():
             cv2.imwrite(save_path, self.filtered_image)
 
 
-    def add_filter(self, filter_name):
-        if filter_name == "SPLIT_CHANNEL" or "GAMMA_CORRECT" or "THRESHOLD" or "THRESHOLD_TOZERO" or "BOX_BLUR" or "MEDIAN_BLUR" or "GAUSSIAN_BLUR" or "EROSION" or "DILATION" or "OPENING" or "CLOSING" or "GRADIENT" or "ROTATE" or "AFFINE" or "PERSPECTIVE" or "CONVOLVE":
-            args = [self.filter_editor.spinbox.value()]
-        else:
-            args = []
-        self.current_filters.append(Filter_Wrapper(filter_name, args))
-        self.filter_editor.filters_list.addItem(filter_name)
+    def add_filter(self, filter_class):
+        new_filter = filter_class()
+        self.current_filters.append(new_filter)
+        self.filter_editor.filters_list.addItem(filter_class.name)
         self.filter_editor.filters_list.setCurrentRow(len(self.current_filters)-1)
+        self.filter_editor.config_panel.load_filter_config(new_filter)
         self.image_renderer.apply_filters(self.current_filters)
 
 
@@ -58,13 +56,12 @@ class MainController():
             index -= 1
             if index >= 0 and len(self.current_filters[index].args) > 0:
                 self.filter_editor.slider.setValue(self.current_filters[index].args[0])
+            self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
             self.image_renderer.apply_filters(self.current_filters)
 
 
     def move_filter_up(self):
         index = self.filter_editor.filters_list.currentRow()
-        print("UP")
-        print(index)
         if index > 0:
             self.current_filters[index-1], self.current_filters[index] = self.current_filters[index], self.current_filters[index-1]
             self.filter_editor.filters_list.insertItem(index-1, self.filter_editor.filters_list.takeItem(index))
@@ -74,8 +71,6 @@ class MainController():
 
     def move_filter_down(self):
         index = self.filter_editor.filters_list.currentRow()
-        print("DOWN")
-        print(index)
         if index < len(self.current_filters)-1:
             self.current_filters[index], self.current_filters[index+1] = self.current_filters[index+1], self.current_filters[index]
             self.filter_editor.filters_list.insertItem(index+1, self.filter_editor.filters_list.takeItem(index))
@@ -83,11 +78,12 @@ class MainController():
             self.image_renderer.apply_filters(self.current_filters)
 
 
-    def update_argument_value(self):
-        if self.filter_editor.filters_list.count() > 0:
-            index = self.filter_editor.filters_list.currentRow()
-            if (index >= 0):
-                if len(self.current_filters[index].args) == 0:
-                    self.current_filters[index].args.append(0)
-                self.current_filters[index].args[0] = self.filter_editor.spinbox.value()
-                self.image_renderer.apply_filters(self.current_filters)
+    def update_argument_value(self, filter_index, param, arg):
+        filter = self.current_filters[filter_index]
+        if filter.params[param] == "BoundedInteger":
+            getattr(filter, param).value = int(arg)
+        elif filter.params[param] == "BoundedDouble":
+            getattr(filter, param).value = float(arg)
+        elif filter.params[param] == "RadioSelect":
+            getattr(filter, param).value = arg
+        self.image_renderer.apply_filters(self.current_filters)
