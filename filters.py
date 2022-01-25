@@ -462,7 +462,7 @@ class FilterConvolvePresets(Filter):
 
     def __init__(self):
         super().__init__()
-        self.preset = RadioSelect(["SHARPEN", "EDGE_DETECT", "EMBOSS", "SOBEL"])
+        self.preset = RadioSelect(["SHARPEN", "EDGE_DETECT", "EMBOSS_TL_BR", "TOP_SOBEL", "LEFT_SOBEL", "OUTLINE", "EXTREME_OUTLINE"])
         valid_border_types = BorderTypes.copy()
         valid_border_types.remove("BORDER_WRAP")
         self.border_type = RadioSelect(valid_border_types, "BORDER_DEFAULT")
@@ -481,17 +481,35 @@ class FilterConvolvePresets(Filter):
                     [-1, 8, -1],
                     [-1, -1, -1]
                     ])
-            elif self.preset.value == "EMBOSS":
+            elif self.preset.value == "EMBOSS_TL_BR":
                 kernel = np.array([
-                [-2, -1, 0],
-                [-1, 1, 1],
-                [0, 1, 2]
+                    [-2, -1, 0],
+                    [-1, 1, 1],
+                    [0, 1, 2]
                 ])
-            elif self.preset.value == "SOBEL":
+            elif self.preset.value == "TOP_SOBEL":
                 kernel = np.array([
-                [-1, 0, 1],
-                [-2, 0, 2],
-                [-1, 0, 1]
+                    [1, 2, 1],
+                    [0, 0, 0],
+                    [-1, -2, -1]
+                ])
+            elif self.preset.value == "LEFT_SOBEL":
+                kernel = np.array([
+                    [1, 0, -1],
+                    [2, 0, -2],
+                    [1, 0, -1]
+                ])
+            elif self.preset.value == "OUTLINE":
+                kernel = np.array([
+                    [-1, -1, -1],
+                    [-1, 8, -1],
+                    [-1, -1, -1]
+                ])
+            elif self.preset.value == "EXTREME_OUTLINE":
+                kernel = np.array([
+                    [0, -256, 0],
+                    [-256, 1024, -256],
+                    [0, -256, 0]
                 ])
 
             return cv2.filter2D(img, -1, kernel, borderType=getattr(cv2, self.border_type.value))
