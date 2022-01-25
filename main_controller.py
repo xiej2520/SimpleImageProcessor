@@ -55,6 +55,7 @@ class MainController():
             self.filter_editor.filters_list.takeItem(index)
             index -= 1
             if index >= 0:
+                print(index)
                 self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
             else:
                 self.filter_editor.config_panel.remove_all_configs
