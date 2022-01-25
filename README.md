@@ -1,6 +1,6 @@
 # Simple Image Processor
 Simple image processor program that allows the user to apply multiple filters to an image sequentially, and edit them on the fly. 
-The program contains many basic filters provided by OpenCV, packaged in a plain GUI interface for the user to try.
+The program contains many basic filters provided by OpenCV, packaged in a plain GUI interface for ease of use.
 
 
 ## Tools used
