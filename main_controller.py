@@ -55,7 +55,7 @@ class MainController():
             self.filter_editor.filters_list.takeItem(index)
             index -= 1
             if index >= 0:
-                print(index)
+                self.filter_editor.filters_list.setCurrentRow(index)
                 self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
             else:
                 self.filter_editor.config_panel.remove_all_configs()
@@ -88,4 +88,6 @@ class MainController():
             getattr(filter, param).value = float(arg)
         elif filter.params[param] == "RadioSelect":
             getattr(filter, param).value = arg
+        elif filter.params[param] == "Boolean":
+            setattr(filter, param, (True if int(arg) == 2 else False))
         self.image_renderer.apply_filters(self.current_filters)

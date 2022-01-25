@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QWidget, QListWidget, QComboBox, QSlider, QPushButton, QHBoxLayout, QVBoxLayout, QSpinBox, QLabel, QGridLayout, QDoubleSpinBox
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QListWidget, QComboBox, QSlider, QPushButton, QHBoxLayout, QVBoxLayout, QSpinBox, QLabel, QGridLayout, QDoubleSpinBox, QCheckBox
+from PyQt5.QtCore import Qt, QCoreApplication, QEvent, pyqtSignal
+from PyQt5.QtGui import QKeyEvent
 from filters import filter_classes
 
 class FilterEditor(QWidget):
@@ -94,6 +95,10 @@ class ConfigPanel(QWidget):
                 param_editor = RadioSelectEditor(param, getattr(filter, param))
                 self.layout.addWidget(param_editor)
                 param_editor.valueChanged.connect(lambda value, p=param: self.paramChanged.emit(p, value))
+            elif param_type == "Boolean":
+                param_editor = BooleanEditor(param, getattr(filter, param))
+                self.layout.addWidget(param_editor)
+                param_editor.valueChanged.connect(lambda value, p=param: self.paramChanged.emit(p, value))
 
 
     def remove_all_configs(self):
@@ -124,32 +129,46 @@ class BoundedIntegerEditor(QWidget):
         self.spinbox.setMinimum(BI.min)
         self.spinbox.setMaximum(BI.max)
         self.spinbox.setValue(BI.value)
+        self.spinbox.setSingleStep(BI.step)
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(BI.min)
         self.slider.setMaximum(BI.max)
-        self.slider.setTickInterval(1)
-        self.slider.setSingleStep(1)
+        self.slider.setTickInterval(BI.step)
+        self.slider.setSingleStep(BI.step)
         self.slider.setValue(BI.value)
-        self.spinbox.valueChanged.connect(self.spinbox_change)
+        self.spinbox.editingFinished.connect(self.spinbox_change)
         self.slider.valueChanged.connect(self.slider_move)
 
         self.layout.addWidget(self.label, 0, 0)
         self.layout.addWidget(self.spinbox, 0, 1)
         self.layout.addWidget(self.slider, 1, 0, 1, 2)
 
+    def verifySpinbox(self):
+        # ensures that spinbox value is an integer multiple of steps above minimum
+        min = self.spinbox.minimum()
+        val = self.spinbox.value()
+        step = self.spinbox.singleStep()
+        if (val - min) % step != 0:
+            # sets value to closest step below input value
+            self.spinbox.setValue(min + step * int((val - min) / step))
 
     def slider_move(self):
-        self.spinbox.setValue(self.slider.value()) # will fire off spinbox event
+        self.spinbox.setValue(self.slider.value())
+        # will fire off spinbox event
+        keyEvent = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier)
+        QCoreApplication.postEvent(self.spinbox, keyEvent)
 
     def spinbox_change(self):
+        self.verifySpinbox()
         self.slider.setValue(self.spinbox.value())
         self.valueChanged.emit(self.spinbox.value())
+
 
 class BoundedDoubleEditor(QWidget):
 
     valueChanged = pyqtSignal(float)
 
-    def __init__(self, label, BI):
+    def __init__(self, label, BD):
         super(QWidget, self).__init__()
 
         self.layout = QGridLayout()
@@ -159,28 +178,40 @@ class BoundedDoubleEditor(QWidget):
         self.label = QLabel(label)
         self.spinbox = QDoubleSpinBox()
         
-        self.spinbox.setMinimum(BI.min)
-        self.spinbox.setMaximum(BI.max)
-        self.spinbox.setValue(BI.value)
-        self.spinbox.setSingleStep(0.01)
+        self.spinbox.setMinimum(BD.min)
+        self.spinbox.setMaximum(BD.max)
+        self.spinbox.setValue(BD.value)
+        self.spinbox.setSingleStep(BD.step)
         self.slider = QSlider(Qt.Horizontal)
-        self.slider.setMinimum(BI.min * 100)
-        self.slider.setMaximum(BI.max * 100)
-        self.slider.setSingleStep(1)
-        self.slider.setTickInterval(1)
-        self.slider.setValue(BI.value * 100)
-        self.spinbox.valueChanged.connect(self.spinbox_change)
+        self.slider.setMinimum(BD.min * 100)
+        self.slider.setMaximum(BD.max * 100)
+        self.slider.setSingleStep(BD.step)
+        self.slider.setTickInterval(BD.step)
+        self.slider.setValue(BD.value * 100)
+        self.spinbox.editingFinished.connect(self.spinbox_change)
         self.slider.valueChanged.connect(self.slider_move)
 
         self.layout.addWidget(self.label, 0, 0)
         self.layout.addWidget(self.spinbox, 0, 1)
         self.layout.addWidget(self.slider, 1, 0, 1, 2)
 
+    def verifySpinbox(self):
+        # ensures that spinbox value is an integer multiple of steps above minimum
+        min = self.spinbox.minimum()
+        val = self.spinbox.value()
+        step = self.spinbox.singleStep()
+        if (val - min) % step != 0:
+            # sets value to closest step below input value
+            self.spinbox.setValue(min + step * int((val - min) / step))
 
     def slider_move(self):
-        self.spinbox.setValue(self.slider.value() / 100) # will fire off spinbox event
+        self.spinbox.setValue(self.slider.value() / 100)
+        # will fire off spinbox event
+        keyEvent = QKeyEvent(QEvent.KeyPress, Qt.Key_Return, Qt.NoModifier)
+        QCoreApplication.postEvent(self.spinbox, keyEvent)
 
     def spinbox_change(self):
+        self.verifySpinbox()
         self.slider.setValue(self.spinbox.value() * 100)
         self.valueChanged.emit(self.spinbox.value())
 
@@ -206,3 +237,26 @@ class RadioSelectEditor(QWidget):
         self.layout.addWidget(self.select_box)
 
         self.select_box.currentIndexChanged.connect(lambda index: self.valueChanged.emit(list(RS.settings.keys())[index]))
+
+
+class BooleanEditor(QWidget):
+
+    valueChanged = pyqtSignal(str)
+
+    def __init__(self, label, Bool):
+        super(QWidget, self).__init__()
+
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.label = QLabel(label)
+        self.checkbox = QCheckBox()
+        self.checkbox.setChecked(Bool)
+
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(self.checkbox)
+
+        # checkbox emits 0 for unchecked, 2 for checked
+        self.checkbox.stateChanged.connect(lambda value: self.valueChanged.emit(str(value)))

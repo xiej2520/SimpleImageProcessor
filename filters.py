@@ -1,3 +1,4 @@
+from cmath import inf
 import cv2
 import numpy as np
 from abc import ABC, abstractmethod
@@ -30,6 +31,8 @@ class FilterInvert(Filter):
     def apply(self, img):
         if self.active:
             return cv2.bitwise_not(img)
+        else:
+            return img
 
 
 class FilterSplitChannel(Filter):
@@ -191,13 +194,11 @@ class FilterMedianBlur(Filter):
 
     def __init__(self):
         super().__init__()
-        self.ksize = BoundedInteger(3, 1, 255)
+        self.ksize = BoundedInteger(3, 1, 255, 2)
 
     def apply(self, img):
         if self.active:
-            return cv2.medianBlur(img, 
-                (self.ksize.value + (1 if self.ksize.value % 2 == 0 else 0)), 
-            )
+            return cv2.medianBlur(img, self.ksize.value)
         else:
             return img
 
@@ -216,8 +217,8 @@ class FilterGaussianBlur(Filter):
 
     def __init__(self):
         super().__init__()
-        self.kernel_width = BoundedInteger(3, 0, 255)
-        self.kernel_height = BoundedInteger(3, 0, 255)
+        self.kernel_width = BoundedInteger(3, 1, 255, 2)
+        self.kernel_height = BoundedInteger(3, 1, 255, 2)
         self.sigma_x = BoundedDouble(0, 0, 63)
         self.sigma_y = BoundedDouble(0, 0, 63)
         valid_border_types = BorderTypes.copy()
@@ -227,13 +228,13 @@ class FilterGaussianBlur(Filter):
 
     def apply(self, img):
         if self.active:
-            parsed_kw = self.kernel_width.value
-            parsed_kh = self.kernel_height.value
-            if self.kernel_width.value != 0 and self.kernel_width.value % 2 == 0:
-                parsed_kw += 1
-            if self.kernel_height.value != 0 and self.kernel_height.value % 2 == 0:
-                parsed_kh += 1
-            return cv2.GaussianBlur(img, (parsed_kw, parsed_kh), self.sigma_x.value, self.sigma_y.value, getattr(cv2, self.border_type.value))
+            return cv2.GaussianBlur(
+                img, 
+                (self.kernel_width.value, self.kernel_height.value), 
+                self.sigma_x.value, 
+                self.sigma_y.value, 
+                getattr(cv2, self.border_type.value)
+            )
         else:
             return img
 
@@ -248,7 +249,7 @@ class FilterErode(Filter):
         "kernel_height": "BoundedInteger", 
         "iterations": "BoundedInteger", 
         "border_type": "RadioSelect"
-        }
+    }
 
     def __init__(self):
         super().__init__()
@@ -258,6 +259,7 @@ class FilterErode(Filter):
         self.iterations = BoundedInteger(1, 1, 255)
         valid_border_types = BorderTypes.copy()
         valid_border_types.remove("BORDER_WRAP")
+        valid_border_types.remove("BORDER_TRANSPARENT")
         self.border_type = RadioSelect(valid_border_types, "BORDER_CONSTANT")
 
     def apply(self, img):
@@ -432,7 +434,7 @@ class WarpPolar(Filter):
 
     def __init__(self):
         super().__init__()
-        self.max_radius = BoundedInteger(1, 0, 4096)
+        self.max_radius = BoundedInteger(1, 0, 8192)
         valid_flags = InterpolationFlags.copy()
         valid_flags.remove("INTER_NEAREST_EXACT")
         valid_flags.remove("INTER_MAX")
@@ -442,13 +444,13 @@ class WarpPolar(Filter):
 
     def apply(self, img):
         if self.active:
-            flag = self.flags.value
+            flag = getattr(cv2, self.flags.value)
             if self.POLAR_LOG:
                 flag += cv2.WARP_POLAR_LOG
             if self.INVERSE_MAP:
                 flag += cv2.WARP_INVERSE_MAP
             rows, cols, channels = img.shape
-            return cv2.warpPolar(img, (cols, rows), ((cols-1)/2.0, (rows-1)/2.0), self.max_radius.value, getattr(cv2, flag))
+            return cv2.warpPolar(img, (cols, rows), ((cols-1)/2.0, (rows-1)/2.0), self.max_radius.value, flag)
         else:
             return img
 
@@ -519,15 +521,15 @@ class FilterConvolve(Filter):
 
     def __init__(self):
         super().__init__()
-        self.M11 = BoundedDouble(0, -10, 10)
-        self.M12 = BoundedDouble(0, -10, 10)
-        self.M13 = BoundedDouble(0, -10, 10)
-        self.M21 = BoundedDouble(0, -10, 10)
-        self.M22 = BoundedDouble(1, -10, 10)
-        self.M23 = BoundedDouble(0, -10, 10)
-        self.M31 = BoundedDouble(0, -10, 10)
-        self.M32 = BoundedDouble(0, -10, 10)
-        self.M33 = BoundedDouble(0, -10, 10)
+        self.M11 = BoundedDouble(0, -3, 3)
+        self.M12 = BoundedDouble(0, -3, 3)
+        self.M13 = BoundedDouble(0, -3, 3)
+        self.M21 = BoundedDouble(0, -3, 3)
+        self.M22 = BoundedDouble(1, -3, 3)
+        self.M23 = BoundedDouble(0, -3, 3)
+        self.M31 = BoundedDouble(0, -3, 3)
+        self.M32 = BoundedDouble(0, -3, 3)
+        self.M33 = BoundedDouble(0, -3, 3)
         self.anchor_x = BoundedInteger(-1, -1, 3)
         self.anchor_y = BoundedInteger(-1, -1, 3)
         self.delta = BoundedInteger(0, -255, 255)
