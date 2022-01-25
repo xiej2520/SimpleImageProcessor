@@ -44,6 +44,7 @@ class MainController():
         self.current_filters.append(new_filter)
         self.filter_editor.filters_list.addItem(filter_class.name)
         self.filter_editor.filters_list.setCurrentRow(len(self.current_filters)-1)
+        self.filter_editor.prev_index = self.filter_editor.filters_list.currentRow()
         self.filter_editor.config_panel.load_filter_config(new_filter)
         self.image_renderer.apply_filters(self.current_filters)
 
@@ -56,6 +57,7 @@ class MainController():
             index -= 1
             if index >= 0:
                 self.filter_editor.filters_list.setCurrentRow(index)
+                self.filter_editor.prev_index = self.filter_editor.filters_list.currentRow()
                 self.filter_editor.config_panel.load_filter_config(self.current_filters[index])
             else:
                 self.filter_editor.config_panel.remove_all_configs()
