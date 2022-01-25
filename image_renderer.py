@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QLabel, QSizePolicy, QScrollArea, QAction, QMenu
-from PyQt5.QtGui import QPixmap, QColor, QImage, QCursor
+from PyQt5.QtGui import QCursor
 from PyQt5.QtCore import Qt, QPoint
 import numpy as np
 

@@ -1,6 +1,5 @@
 import cv2
 from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import Qt
 
 
 def convert_cv_qt(cv_img):

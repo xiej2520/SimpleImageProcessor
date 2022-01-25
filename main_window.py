@@ -1,6 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QComboBox, QDialog, QListWidget, QMainWindow, QLabel, QHBoxLayout, QVBoxLayout, QWidget, QPushButton, QFileDialog, QSlider, QMessageBox, QMenuBar, QMenu, QAction
-from PyQt5.QtGui import QPixmap, QColor, QImage
-from PyQt5.QtCore import QSize, Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QHBoxLayout, QVBoxLayout, QWidget, QMenuBar
 
 from image_renderer import ImageRenderer
 from file_menu import FileMenu
