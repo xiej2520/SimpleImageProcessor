@@ -35,8 +35,10 @@ python [path_to_download_location]/main.py
 * Rewrite image load code to only render onscreen image data (reduce memory usage)
 * Tooltips for image data, e.g. pixel data at mouse position
 * New widgets for editing matrix-type arguments for filters
+* Save and import current filter list and parameters
 * More copy/paste functionality
 * Usage tips and help menu
+* More useful filters
 * Basic paint functionality
 
 ###
