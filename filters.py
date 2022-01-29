@@ -56,6 +56,22 @@ class FilterSplitChannel(Filter):
             return img
 
 
+class FilterGrayscale(Filter):
+
+    name = "Grayscale"
+    params = {"active": "Boolean"}
+
+    def __init__(self):
+        super().__init__()
+
+    def apply(self, img):
+        if self.active:
+            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            return cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
+        else:
+            return img
+
+
 class FilterGammaCorrect(Filter):
 
     name = "Gamma Correct"
@@ -161,6 +177,53 @@ class FilterThresholdOtsuGauss(Filter):
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             filtered_img = cv2.threshold(img_gray, 0, self.max_value.value, cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
             return cv2.cvtColor(filtered_img, cv2.COLOR_GRAY2BGR)
+        else:
+            return img
+
+
+class FilterThresholdRange(Filter):
+
+    name = "Range Threshold"
+    params = {
+        "active": "Boolean",
+        "rLeft": "BoundedInteger",
+        "rRight": "BoundedInteger",
+        "gLeft": "BoundedInteger",
+        "gRight": "BoundedInteger",
+        "bLeft": "BoundedInteger",
+        "bRight": "BoundedInteger",
+        "invert": "Boolean"
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.rLeft = BoundedInteger(0, 0, 255)
+        self.rRight = BoundedInteger(0, 0, 256)
+        self.gLeft = BoundedInteger(0, 0, 255)
+        self.gRight = BoundedInteger(0, 0, 256)
+        self.bLeft = BoundedInteger(0, 0, 255)
+        self.bRight = BoundedInteger(0, 0, 256)
+        self.invert = False
+
+    def apply(self, img):
+        if self.active:
+            rLUT = np.zeros((1, 256), np.uint8)
+            rLUT[0][self.rLeft.value:self.rRight.value] = 255
+            gLUT = np.zeros((1, 256), np.uint8)
+            gLUT[0][self.gLeft.value:self.gRight.value] = 255
+            bLUT = np.zeros((1, 256), np.uint8)
+            bLUT[0][self.bLeft.value:self.bRight.value] = 255
+
+            if self.invert:
+                rLUT[0] = [255 - i for i in rLUT[0]]
+                gLUT[0] = [255 - i for i in gLUT[0]]
+                bLUT[0] = [255 - i for i in bLUT[0]]
+
+            rThres = cv2.LUT(img[:,:,2], rLUT)
+            gThres = cv2.LUT(img[:,:,1], gLUT)
+            bThres = cv2.LUT(img[:,:,0], bLUT)
+
+            return np.dstack((bThres, gThres, rThres))
         else:
             return img
 
@@ -566,11 +629,13 @@ class FilterConvolve(Filter):
 filter_classes = [
     FilterInvert, 
     FilterSplitChannel,
+    FilterGrayscale,
     FilterGammaCorrect,
     FilterThreshold,
     FilterThresholdToZero,
     FilterThresholdAdaptive,
     FilterThresholdOtsuGauss,
+    FilterThresholdRange,
     FilterBoxBlur,
     FilterMedianBlur,
     FilterGaussianBlur,
